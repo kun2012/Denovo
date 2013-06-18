@@ -610,22 +610,12 @@ expr	:	expr MINUS expr	{
 		$$->ch[1] = createTreeNode(@2.first_line, T_DIV);
 		$$->ch[2] = $3;
 		}
-	|	ID ASSIGN expr{
-			$$ = createTreeNode(@1.first_line, T_expr); 
+	|	expr ASSIGN expr{
+			$$ = createTreeNode($1->lineNum, T_expr); 
 			$$->childNum = 3;
-			$$->ch[0] = createTreeNode(@1.first_line, T_ID);
-			strcpy($$->ch[0]->strconst, $1);
+			$$->ch[0] = $1;
 			$$->ch[1] = createTreeNode(@2.first_line, T_ASSIGN);
 			$$->ch[2] = $3;
-		}
-	|	ID arrayExpr ASSIGN expr{
-			$$ = createTreeNode(@1.first_line, T_expr); 
-			$$->childNum = 4;
-			$$->ch[0] = createTreeNode(@1.first_line, T_ID);
-			strcpy($$->ch[0]->strconst, $1);
-			$$->ch[1] = $2;
-			$$->ch[2] = createTreeNode(@3.first_line, T_ASSIGN);
-			$$->ch[3] = $4;
 		}
 	|	ID arrayExpr{
 			$$ = createTreeNode(@1.first_line, T_expr); 
@@ -634,16 +624,12 @@ expr	:	expr MINUS expr	{
 			strcpy($$->ch[0]->strconst, $1);
 			$$->ch[1] = $2;
 		}
-	|	ID DOT ID ASSIGN expr{
-			$$ = createTreeNode(@1.first_line, T_expr); 
-			$$->childNum = 5;
-			$$->ch[0] = createTreeNode(@1.first_line, T_ID);
-			strcpy($$->ch[0]->strconst, $1);
+	|	expr DOT expr{
+			$$ = createTreeNode($1->lineNum, T_expr); 
+			$$->childNum = 3;
+			$$->ch[0] = $1;
 			$$->ch[1] = createTreeNode(@2.first_line, T_DOT);
-			$$->ch[2] = createTreeNode(@3.first_line, T_ID);
-			strcpy($$->ch[2]->strconst, $3);
-			$$->ch[3] = createTreeNode(@4.first_line, T_ASSIGN);
-			$$->ch[4] = $5;
+			$$->ch[2] = $3;
 		}
 	|	LP expr RP{
 			$$ = createTreeNode(@1.first_line, T_expr); 
@@ -667,27 +653,6 @@ expr	:	expr MINUS expr	{
 		$$->ch[2] = $3;
 		$$->ch[3] = createTreeNode(@4.first_line, T_RP);
 		}
-	|	ID DOT ID LP args RP{
-		$$ = createTreeNode(@1.first_line, T_expr); 
-		$$->childNum = 6;
-		$$->ch[0] = createTreeNode(@1.first_line, T_ID);
-		strcpy($$->ch[0]->strconst, $1);
-		$$->ch[1] = createTreeNode(@2.first_line, T_DOT);
-		$$->ch[2] = createTreeNode(@3.first_line, T_ID);
-		strcpy($$->ch[2]->strconst, $3);
-		$$->ch[3] = createTreeNode(@4.first_line, T_LP);
-		$$->ch[4] = $5;
-		$$->ch[5] = createTreeNode(@6.first_line, T_RP);
-	}
-	|	ID DOT ID{
-		$$ = createTreeNode(@1.first_line, T_expr); 
-		$$->childNum = 3;
-		$$->ch[0] = createTreeNode(@1.first_line, T_ID);
-		strcpy($$->ch[0]->strconst, $1);
-		$$->ch[1] = createTreeNode(@2.first_line, T_DOT);
-		$$->ch[2] = createTreeNode(@3.first_line, T_ID);
-		strcpy($$->ch[2]->strconst, $3);
-	}
 	|	NEW TYPE arrayExprDec{
 		$$ = createTreeNode(@1.first_line, T_expr); 
 		$$->childNum = 3;
@@ -742,15 +707,6 @@ expr	:	expr MINUS expr	{
 			$$ = createTreeNode(@1.first_line, T_expr); 
 		}
 	|	ID LP error RP{
-		$$ = createTreeNode(@1.first_line, T_expr); 
-		}
-	|	error LP RP{
-		$$ = createTreeNode(@1.first_line, T_expr); 
-		}
-	|	NEW error LP RP{
-		$$ = createTreeNode(@1.first_line, T_expr); 
-		}
-	|	error TYPE LP RP{
 		$$ = createTreeNode(@1.first_line, T_expr); 
 		}
 	;
