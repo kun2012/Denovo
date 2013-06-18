@@ -1,0 +1,17 @@
+FUNCTION main :
+Finbonaccimaina := #1
+Finbonaccimainb := #1
+Finbonaccimaini := #0
+READ Finbonaccimainn
+LABEL label1 :
+IF Finbonaccimaini < Finbonaccimainn GOTO label2
+GOTO label3
+LABEL label2 :
+WRITE Finbonaccimaina
+Finbonaccimainc := Finbonaccimaina + Finbonaccimainb
+Finbonaccimaina := Finbonaccimainb
+Finbonaccimainb := Finbonaccimainc
+Finbonaccimaini := Finbonaccimaini + #1
+GOTO label1
+LABEL label3 :
+RETURN #0

@@ -1,0 +1,23 @@
+class Position {
+	Int x, y;
+	
+	//Int getDistance(Position p) {
+//		return p.x + p.y;
+//	}
+	
+	Int main() {
+	//	Position p = new Position;
+		Int q;
+		q = test()+3;
+		//q.x = 1;
+		//q.y = 2;
+		//q.x = q.y;
+		//return q.getDistance(q);
+	}
+	
+	Int test() {
+	//	Position[][][] p = new Position[3][4][5];
+	//	Position k = p[1][2][3];
+	//	p[2][2][2] = k;
+	}
+}

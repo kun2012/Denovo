@@ -1,0 +1,20 @@
+FUNCTION main :
+READ SumNmainn
+SumNmains := #0
+SumNmaini := #1
+LABEL label1 :
+t1 := SumNmaini
+t2 := SumNmainn
+IF t1 <= t2 GOTO label2
+GOTO label3
+LABEL label2 :
+t3 := SumNmains
+t4 := SumNmaini
+SumNmains := t3 + t4
+t5 := SumNmaini
+SumNmaini := t5 + #1
+GOTO label1
+LABEL label3 :
+t6 := SumNmains
+WRITE t6
+RETURN #0

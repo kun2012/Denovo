@@ -1,0 +1,30 @@
+FUNCTION Factfact :
+PARAM Factfactthis
+PARAM Factfactn
+IF Factfactn == #1 GOTO label1
+GOTO label2
+LABEL label1 :
+RETURN Factfactn
+GOTO label3
+LABEL label2 :
+t6 := Factfactn - #1
+ARG t6
+ARG Factfactthis
+t5 := CALL Factfact
+t3 := Factfactn * t5
+RETURN t3
+LABEL label3 :
+FUNCTION main :
+READ Factmainm
+IF Factmainm > #1 GOTO label4
+GOTO label5
+LABEL label4 :
+ARG Factmainm
+ARG Factmainthis
+Factmainresult := CALL Factfact
+GOTO label6
+LABEL label5 :
+Factmainresult := #1
+LABEL label6 :
+WRITE Factmainresult
+RETURN #0

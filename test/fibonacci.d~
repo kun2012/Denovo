@@ -1,0 +1,15 @@
+class Finbonacci inherits IO {
+	Int main() {
+		Int a = 1, b = 1, n;
+		Int i = 0;
+		n = read();
+		while(i < 20) {
+			Int c = a + b;
+			a = b;
+			b = c;
+			i = i + 1;
+		}
+		write(a);
+		return 0;
+	}
+}

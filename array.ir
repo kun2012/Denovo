@@ -1,0 +1,7 @@
+FUNCTION main :
+DEC Positionmainp 480
+t3 := #264 + &Positionmainp
+Positionmaink := *t3
+t12 := #416 + &Positionmainp
+*t12 := Positionmaink
+RETURN #0
