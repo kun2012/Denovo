@@ -17,8 +17,9 @@ include/mips.o: include/mips.c include/mips.h
 	
 syntax.tab.c: syntax.y
 	bison -v -d syntax.y
-
+scanner: main.c lex.yy.c
+	gcc main.c lex.yy.c -lfl -o scanner
 lex.yy.c: lexical.l
 	flex lexical.l
 clear:
-	rm -f lex.yy.c dnv syntax.tab.c syntax.tab.h $(ESSENTIAL)
+	rm -f scanner lex.yy.c dnv syntax.tab.c syntax.tab.h $(ESSENTIAL)

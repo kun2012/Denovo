@@ -1,26 +1,6 @@
 class Quicksort inherits IO{
 	Int[] number;
 	
-	Int quicksort(Int left, Int right)
-	{
-		Int l = left, r = right;
-		Int mid=number[(l+r)/2];
-		while (l<=r){
-		while (number[l]<mid) l=l+1;
-		while (number[r]>mid) r=r-1; 
-		if (l<=r) {
-			Int t = number[l];
-			number[l] = number[r];
-			number[r] = t;
-			l=l+1; 
-			r=r-1;
-		}
-		}
-		Int x;
-		if (left<r) x = quicksort(left,r);
-		if (l<right) x = quicksort(l,right);
-		return 0;
-	}
    Int main()
 	{
 		number = new Int[5];
@@ -38,11 +18,29 @@ class Quicksort inherits IO{
 		}
 		return 0;
 	}
-}
-
-class Test1 inherits IO {
-
 	
+	Int quicksort(Int left, Int right)
+	{
+		Int l = left, r = right;
+		Int mid=number[(l+r)/2];
+		while (l<=r){
+		while (number[l]<mid) l=l+1;
+		while (number[r]>mid) r=r-1; 
+		if (l < r) {
+			Int t = number[l];
+			number[l] = number[r];
+			number[r] = t;
+		}
+		if (l<=r) {
+			l=l+1; 
+			r=r-1;
+		}
+		}
+		Int x;
+		if (left<r) x = quicksort(left,r);
+		if (l<right) x = quicksort(l,right);
+		return 0;
+	}
 }
 
 
