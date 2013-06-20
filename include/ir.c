@@ -882,7 +882,7 @@ void printIR(struct InterCodes *p) {
             printf("\n");
             break;
         case RETURN:
-            printf("RETURN ");;
+            printf("RETURN ");
             printOperand(p->code.u.oneop.op1);
             printf("\n");
             break;
