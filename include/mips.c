@@ -10,7 +10,7 @@ int mainFlag;
 
 struct idRegNode *findIdReg(char *idName) {
 	int k = hash(idName, MAX_ID_NUM);
-	struct idRegNode * p = idRegMap[k];
+	struct idRegNode *p = idRegMap[k];
 	while(p != NULL) {
 		if (strcmp(p->idName, idName) == 0) return p;
 		p = p->next;
@@ -58,6 +58,7 @@ void genlw(char *regName, int offset, FILE *f) {
 
 void regSpill(char *regName, char *idName, FILE *f) {
 	struct idRegNode *p = findIdReg(idName);
+	if (p == NULL) return ;
 	fprintf(f, "sw %s, %d($fp)\n", regName, p->offset);
 	p->inReg = 0;
 }
@@ -77,6 +78,7 @@ void allocateReg(struct idRegNode *p, char *regName, FILE *f, int firstuse) {
 	getRegName(regturn, regName);
 	regSpill(regName, regMap[regturn], f);
 	strcpy(p->regName, regName);
+	strcpy(regMap[regturn], p->idName);
 	p->inReg = 1;
 	genlw(regName, p->offset, f);
 	regturn++;
@@ -148,6 +150,38 @@ int handlePara(struct InterCodes *p, FILE *f, int dep) {
 	return cnt;
 }
 
+
+void storeAll(FILE *f) {
+	char regName[4];
+	int i;
+	for (i = 0; i < MAX_REG_NUM; i++) {
+		if (strlen(regMap[i]) == 0) continue;
+		getRegName(i, regName);
+		fprintf(f,"addi $sp, $sp, -4\n");
+		fprintf(f,"sw %s, 0($sp)\n",regName);
+	}
+}
+
+void loadAll(FILE *f) {
+	char regName[4];
+	int i;
+	for (i = MAX_REG_NUM - 1; i >= 0; --i) {
+		if (strlen(regMap[i]) == 0) continue;
+		getRegName(i, regName);
+		fprintf(f,"lw %s, 0($sp)\n",regName);
+		fprintf(f,"addi $sp, $sp, 4\n");
+	}
+}
+
+void clearIdReg() {
+	int i;
+	for (i = 0; i < MAX_ID_NUM; i++) {
+		idRegMap[i] = NULL;
+	}
+	for (i = 0; i < MAX_REG_NUM; i++)
+		strcpy(regMap[i], "");
+}
+
 void printInstruction(struct InterCodes *p, FILE *f) {
 	if (p == NULL) return ;
 	char reg1[MAX_LABEL_LEN], reg2[MAX_LABEL_LEN], reg3[MAX_LABEL_LEN];
@@ -157,6 +191,7 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 			fprintf(f, "%s:\n", p->code.u.oneop.op1->u.s);
 			break;
 		case FUNCTION:
+			clearIdReg();
 			fprintf(f, "%s:\n", p->code.u.oneop.op1->u.s);
 			if (strcmp(p->code.u.oneop.op1->u.s, "main") == 0) mainFlag = 1;
 			else mainFlag = 0;
@@ -340,6 +375,7 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 			fprintf(f, "jr $ra\n");
 			break;
 		case CALL:
+			storeAll(f);
 			saveInStack("$fp", f);
 			fprintf(f, "move $fp, $sp\n");
 			saveInStack("$ra", f);
@@ -347,7 +383,7 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 			fprintf(f, "jal %s\n", p->code.u.call.op1->u.s);
 			getFromStack("$ra", f);
 			getFromStack("$fp", f);
-			
+			loadAll(f);
 			getReg(p->code.u.call.result->u.s, reg1, f);
 			fprintf(f, "move %s, $v0\n", reg1);
 			break;

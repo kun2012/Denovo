@@ -7,7 +7,7 @@
 
 struct idRegNode {
 	char idName[MAX_LABEL_LEN];
-	char regName[3];
+	char regName[4];
 	int inReg;
 	int offset;
 	struct idRegNode *next;

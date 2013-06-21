@@ -9,7 +9,7 @@
 #define MAX_ID_NUM 4096
 #define MAX_SCOPE_NUM 64
 #define MAX_TEMP_NUM 4096
-#define MAX_REG_NUM 18
+#define MAX_REG_NUM 17
 
 #define T_INT			1
 #define T_STR			2

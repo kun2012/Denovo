@@ -7,14 +7,14 @@
 
 struct idRegNode {
 	char idName[MAX_LABEL_LEN];
-	char regName[2];
+	char regName[3];
 	int inReg;
 	int offset;
 	struct idRegNode *next;
 };
 
 struct idRegNode *idRegMap[MAX_ID_NUM];
-char regMap[MAX_REG_NUM];
+char regMap[MAX_REG_NUM][MAX_LABEL_LEN];
 
 extern void generateMIPS(struct InterCodes *p, FILE *f);
 

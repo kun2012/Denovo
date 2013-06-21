@@ -6,9 +6,9 @@
 #define MAX_LABEL_LEN 32
 #define MAX_TYPE_NUM 127
 #define MAX_CHILDREN_NUM 9
-#define MAX_ID_NUM 4096
+#define MAX_ID_NUM 1024
 #define MAX_SCOPE_NUM 64
-#define MAX_TEMP_NUM 4096
+#define MAX_TEMP_NUM 1024
 #define MAX_REG_NUM 17
 
 #define T_INT			1

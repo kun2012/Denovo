@@ -25,12 +25,6 @@ addi $sp, $sp, -4
 move $t0, $a0
 addi $sp, $sp, -4
 move $t1, $a1
-addi $sp, $sp, -4
-sw $ra, 0($sp)
-move $a0, $t0
-jal write
-lw $ra, 0($sp)
-addi $sp, $sp, 4
 li $s7, 1
 beq $t0, $s7, label1
 j label2
@@ -45,6 +39,12 @@ addi $t2, $t0, -1
 move $a0, $t2
 move $a1, $t1
 addi $sp, $sp, -4
+sw $t0, 0($sp)
+addi $sp, $sp, -4
+sw $t1, 0($sp)
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+addi $sp, $sp, -4
 sw $fp, 0($sp)
 move $fp, $sp
 addi $sp, $sp, -4
@@ -53,6 +53,12 @@ jal Factfact
 lw $ra, 0($sp)
 addi $sp, $sp, 4
 lw $fp, 0($sp)
+addi $sp, $sp, 4
+lw $t2, 0($sp)
+addi $sp, $sp, 4
+lw $t1, 0($sp)
+addi $sp, $sp, 4
+lw $t0, 0($sp)
 addi $sp, $sp, 4
 addi $sp, $sp, -4
 move $t3, $v0
@@ -69,14 +75,18 @@ jal read
 lw $ra, 0($sp)
 addi $sp, $sp, 4
 addi $sp, $sp, -4
-move $t5, $v0
+move $t0, $v0
 li $s7, 1
-bgt $t5, $s7, label4
+bgt $t0, $s7, label4
 j label5
 label4:
-move $a0, $t5
+move $a0, $t0
 addi $sp, $sp, -4
-move $a1, $t6
+move $a1, $t1
+addi $sp, $sp, -4
+sw $t0, 0($sp)
+addi $sp, $sp, -4
+sw $t1, 0($sp)
 addi $sp, $sp, -4
 sw $fp, 0($sp)
 move $fp, $sp
@@ -87,15 +97,19 @@ lw $ra, 0($sp)
 addi $sp, $sp, 4
 lw $fp, 0($sp)
 addi $sp, $sp, 4
+lw $t1, 0($sp)
+addi $sp, $sp, 4
+lw $t0, 0($sp)
+addi $sp, $sp, 4
 addi $sp, $sp, -4
-move $t7, $v0
+move $t2, $v0
 j label6
 label5:
-li $t7, 1
+li $t2, 1
 label6:
 addi $sp, $sp, -4
 sw $ra, 0($sp)
-move $a0, $t7
+move $a0, $t2
 jal write
 lw $ra, 0($sp)
 addi $sp, $sp, 4
