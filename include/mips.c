@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
-int stackoffset = 4;
+int stackoffset = -4;
 int regturn = 0;
+int mainFlag;
 
 struct idRegNode *findIdReg(char *idName) {
 	int k = hash(idName, MAX_ID_NUM);
@@ -43,24 +44,25 @@ struct idRegNode *insertIdReg(char *idName, char *regName, int inReg, int offset
 }
 
 void getRegName(int num, char *regName) {
-	strcpy(regName, "t0");
-	if (num < 10) regName[1] = num + 48;
+	strcpy(regName, "$t0");
+	if (num < 10) regName[2] = num + 48;
 	else {
-		regName[0] = 's';
-		regName[1] = num - 10 + 48;
+		regName[1] = 's';
+		regName[2] = num - 10 + 48;
 	}
 }
 
 void genlw(char *regName, int offset, FILE *f) {
-	fprintf(f, "lw %s, -%d($fp)\n", regName, offset);
+	fprintf(f, "lw %s, %d($fp)\n", regName, offset);
 }
 
 void regSpill(char *regName, char *idName, FILE *f) {
 	struct idRegNode *p = findIdReg(idName);
-	fprintf(f, "sw %s, -%d($fp)\n", regName, p->offset);
+	fprintf(f, "sw %s, %d($fp)\n", regName, p->offset);
+	p->inReg = 0;
 }
 
-void allocateReg(struct idRegNode *p, char *regName, FILE *f) {
+void allocateReg(struct idRegNode *p, char *regName, FILE *f, int firstuse) {
 	int i;
 	for (i = 0; i < MAX_REG_NUM; i++) {
 		if (strlen(regMap[i]) == 0) {
@@ -68,7 +70,7 @@ void allocateReg(struct idRegNode *p, char *regName, FILE *f) {
 			getRegName(i, regName);
 			strcpy(p->regName, regName);
 			p->inReg = 1;
-			genlw(regName, p->offset, f);
+			if (!firstuse) genlw(regName, p->offset, f);
 			return ;
 		}
 	}
@@ -78,6 +80,7 @@ void allocateReg(struct idRegNode *p, char *regName, FILE *f) {
 	p->inReg = 1;
 	genlw(regName, p->offset, f);
 	regturn++;
+	if (regturn == MAX_REG_NUM) regturn = 0;
 }
 
 void getReg(char *idName, char *regName, FILE *f) {
@@ -86,12 +89,23 @@ void getReg(char *idName, char *regName, FILE *f) {
 		if (p->inReg)
 			strcpy(regName, p->regName);
 		else
-			allocateReg(p, regName, f);
+			allocateReg(p, regName, f, 0);
 		return ;
 	}
-	stackoffset += 4;
+	stackoffset -= 4;
+	fprintf(f, "addi $sp, $sp, -4\n");
 	p = insertIdReg(idName, "", 0, stackoffset);
-	allocateReg(p, regName, f);
+	allocateReg(p, regName, f, 1);
+}
+
+int getOffset(char *idName, FILE *f) {
+	struct idRegNode *p = findIdReg(idName);
+	if (p == NULL) {
+		stackoffset -= 4;
+		fprintf(f, "addi $sp, $sp, -4\n");
+		p = insertIdReg(idName, "", 0, stackoffset);
+	}
+	return p->offset;
 }
 
 
@@ -111,20 +125,59 @@ void printWrite(FILE *f) {
 	fprintf(f, "la $a0, _ret\nsyscall\nmove $v0, $0\njr $ra\n\n");
 }
 
+void saveInStack(char *reg, FILE *f) {
+	fprintf(f, "addi $sp, $sp, -4\n");
+	fprintf(f, "sw %s, 0($sp)\n", reg);
+}
+
+void getFromStack(char *reg, FILE *f) {
+	fprintf(f, "lw %s, 0($sp)\n", reg);
+	fprintf(f, "addi $sp, $sp, 4\n");
+}
+
+int handlePara(struct InterCodes *p, FILE *f, int dep) {
+	if (p->code.kind != PARAM) return -1;
+	int cnt = handlePara(p->next, f, dep + 1) + 1;
+	char reg1[MAX_LABEL_LEN];
+	if (cnt < 4) {
+		getReg(p->code.u.oneop.op1->u.s, reg1, f);
+		fprintf(f, "move %s, $a%d\n", reg1, cnt);
+	}else {
+		insertIdReg(p->code.u.oneop.op1->u.s, "", 0, 4 + dep * 4);
+	}
+	return cnt;
+}
+
 void printInstruction(struct InterCodes *p, FILE *f) {
-	int argnum, paranum;
+	if (p == NULL) return ;
 	char reg1[MAX_LABEL_LEN], reg2[MAX_LABEL_LEN], reg3[MAX_LABEL_LEN];
+	int cnt;
 	switch(p->code.kind) {
 		case LABEL:
 			fprintf(f, "%s:\n", p->code.u.oneop.op1->u.s);
 			break;
 		case FUNCTION:
-			
+			fprintf(f, "%s:\n", p->code.u.oneop.op1->u.s);
+			if (strcmp(p->code.u.oneop.op1->u.s, "main") == 0) mainFlag = 1;
+			else mainFlag = 0;
+			stackoffset = -4;
 			break;
 		case PARAM:
-			break;
+			handlePara(p, f, 0);
+			while(p->code.kind == PARAM) p = p->next;
+			printInstruction(p, f);
+			return ;
 		case ARG:
-			break;
+			cnt = 0;
+			while(p->code.kind == ARG) {
+				getReg(p->code.u.oneop.op1->u.s, reg1, f);
+				if (cnt < 4) fprintf(f, "move $a%d, %s\n", cnt, reg1);
+				else saveInStack(reg1, f);
+				cnt++;
+				p = p->next;
+			}
+			printInstruction(p, f);
+			return ;
 		case ASSIGN:
 			getReg(p->code.u.assign.left->u.s, reg1, f);
 			if (p->code.u.assign.left->kind == VARIABLE && 
@@ -152,7 +205,11 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 				getReg(p->code.u.assign.right->u.s, reg2, f);
 				fprintf(f, "lw %s, 0(%s)\n", reg1, reg2);
 			}
-			//ADDRESS
+			if (p->code.u.assign.left->kind == VARIABLE && 			//ADDRESS
+				p->code.u.assign.right->kind == ADDRESS) {
+				fprintf(f, "addi %s, $fp, -%d\n", reg1, getOffset(p->code.u.assign.right->u.s, f));
+			}
+
 			break;
 		case ADD:
 			getReg(p->code.u.binop.result->u.s, reg1, f);
@@ -239,8 +296,20 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 				}
 			break;
 		case IFGOTO:
-			getReg(p->code.u.ifgoto.op1->u.s, reg1, f);
-            getReg(p->code.u.ifgoto.op2->u.s, reg2, f);
+			if (p->code.u.ifgoto.op1->kind == VARIABLE) {
+				getReg(p->code.u.ifgoto.op1->u.s, reg1, f);
+			} else {
+				fprintf(f, "li $s7, %d\n", p->code.u.ifgoto.op1->u.value);
+				strcpy(reg1, "$s7");
+			}
+			
+			if (p->code.u.ifgoto.op2->kind == VARIABLE) 
+				getReg(p->code.u.ifgoto.op2->u.s, reg2, f);
+			else {
+				fprintf(f, "li $s7, %d\n", p->code.u.ifgoto.op2->u.value);
+				strcpy(reg2, "$s7");
+			}
+
             if (strcmp(p->code.u.ifgoto.relop->u.s, "==") == 0) {
             	fprintf(f, "beq ");
             }else if (strcmp(p->code.u.ifgoto.relop->u.s, "!=") == 0) {
@@ -260,29 +329,53 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 			fprintf(f, "j %s\n", p->code.u.oneop.op1->u.s);
 			break;
 		case RETURN:
-			fprintf(f, "move $v0, %s\n", p->code.u.oneop.op1->u.s);
+			if (!mainFlag)
+				fprintf(f, "addi $sp, $fp, -4\n");
+				
+			if (p->code.u.oneop.op1->kind == VARIABLE) {
+				getReg(p->code.u.oneop.op1->u.s, reg1, f);
+				fprintf(f, "move $v0, %s\n", reg1);
+			}else if (p->code.u.oneop.op1->kind == CONSTANT)
+				fprintf(f, "li $v0, %d\n", p->code.u.oneop.op1->u.value);
 			fprintf(f, "jr $ra\n");
 			break;
 		case CALL:
+			saveInStack("$fp", f);
+			fprintf(f, "move $fp, $sp\n");
+			saveInStack("$ra", f);
+			
 			fprintf(f, "jal %s\n", p->code.u.call.op1->u.s);
+			getFromStack("$ra", f);
+			getFromStack("$fp", f);
+			
 			getReg(p->code.u.call.result->u.s, reg1, f);
 			fprintf(f, "move %s, $v0\n", reg1);
 			break;
 		case DEC:
+			fprintf(f, "addi $sp, $sp, -%d\n", p->code.u.dec.size->u.value);
+			insertIdReg(p->code.u.dec.op1->u.s, "", 0, stackoffset - p->code.u.dec.size->u.value);
 			break;
 		case READ:
+			saveInStack("$ra", f);
+			fprintf(f, "jal read\n");
+			getFromStack("$ra", f);
+			getReg(p->code.u.oneop.op1->u.s, reg1, f);
+			fprintf(f, "move %s, $v0\n", reg1);
 			break;
 		case WRITE:
+			saveInStack("$ra", f);
+			getReg(p->code.u.oneop.op1->u.s, reg1, f);
+			fprintf(f, "move $a0, %s\n", reg1);
+			fprintf(f, "jal write\n");
+			getFromStack("$ra", f);
 			break;
 	}
+	printInstruction(p->next, f);
 }
 
 void generateMIPS(struct InterCodes *p, FILE *f) {
 	printData(f);
 	printRead(f);
 	printWrite(f);
-	while(p != NULL) {
-		printInstruction(p, f);
-		p = p->next;
-	}
+	printInstruction(p, f);
 }
