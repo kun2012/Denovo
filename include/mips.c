@@ -195,7 +195,12 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 			fprintf(f, "%s:\n", p->code.u.oneop.op1->u.s);
 			if (strcmp(p->code.u.oneop.op1->u.s, "main") == 0) mainFlag = 1;
 			else mainFlag = 0;
-			stackoffset = -4;
+			if (!mainFlag)
+				stackoffset = -4;
+			else {
+				fprintf(f, "move $fp, $sp\n");
+				stackoffset = 0;
+			}
 			break;
 		case PARAM:
 			handlePara(p, f, 0);
@@ -242,7 +247,7 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 			}
 			if (p->code.u.assign.left->kind == VARIABLE && 			//ADDRESS
 				p->code.u.assign.right->kind == ADDRESS) {
-				fprintf(f, "addi %s, $fp, -%d\n", reg1, getOffset(p->code.u.assign.right->u.s, f));
+				fprintf(f, "addi %s, $fp, %d\n", reg1, getOffset(p->code.u.assign.right->u.s, f));
 			}
 
 			break;
@@ -263,6 +268,22 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 				p->code.u.binop.op2->kind == CONSTANT) {
 					getReg(p->code.u.binop.op1->u.s, reg2, f);
 					fprintf(f, "addi %s, %s, %d\n", reg1, reg2, p->code.u.binop.op2->u.value);
+				}
+			//
+			if (p->code.u.binop.op1->kind == VARIABLE && 
+				p->code.u.binop.op2->kind == ADDRESS) {
+					getReg(p->code.u.binop.op1->u.s, reg2, f);
+					getReg(p->code.u.binop.op2->u.s, reg3, f);
+					fprintf(f, "addi %s, $fp, %d\n", reg3, getOffset(p->code.u.binop.op2->u.s, f));
+					fprintf(f, "add %s, %s, %s\n", reg1, reg2, reg3);
+				}
+			//
+			if (p->code.u.binop.op1->kind == ADDRESS && 
+				p->code.u.binop.op2->kind == VARIABLE) {
+					getReg(p->code.u.binop.op1->u.s, reg2, f);
+					getReg(p->code.u.binop.op2->u.s, reg3, f);
+					fprintf(f, "addi %s, $fp, %d\n", reg2, getOffset(p->code.u.binop.op1->u.s, f));
+					fprintf(f, "add %s, %s, %s\n", reg1, reg2, reg3);
 				}
 			break;
 		case SUB:
@@ -389,7 +410,8 @@ void printInstruction(struct InterCodes *p, FILE *f) {
 			break;
 		case DEC:
 			fprintf(f, "addi $sp, $sp, -%d\n", p->code.u.dec.size->u.value);
-			insertIdReg(p->code.u.dec.op1->u.s, "", 0, stackoffset - p->code.u.dec.size->u.value);
+			stackoffset -= p->code.u.dec.size->u.value;
+			insertIdReg(p->code.u.dec.op1->u.s, "", 0, stackoffset);
 			break;
 		case READ:
 			saveInStack("$ra", f);
@@ -413,5 +435,6 @@ void generateMIPS(struct InterCodes *p, FILE *f) {
 	printData(f);
 	printRead(f);
 	printWrite(f);
+	
 	printInstruction(p, f);
 }

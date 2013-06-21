@@ -10,7 +10,7 @@ class Quicksort inherits IO{
 			number[i] = read();
 			i = i + 1;
 		}
-		Int t = quicksort(0, n - 1);
+		Int t = quicksort(number, 0, n - 1);
 		i = 0;
 		while(i < n) {
 			write(number[i]);
