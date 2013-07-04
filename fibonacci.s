@@ -21,6 +21,7 @@ move $v0, $0
 jr $ra
 
 main:
+move $fp, $sp
 addi $sp, $sp, -4
 li $t0, 1
 addi $sp, $sp, -4

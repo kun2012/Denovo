@@ -69,6 +69,7 @@ move $v0, $t4
 jr $ra
 label3:
 main:
+move $fp, $sp
 addi $sp, $sp, -4
 sw $ra, 0($sp)
 jal read
