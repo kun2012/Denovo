@@ -1126,5 +1126,5 @@ void optimizationIR(struct InterCodes *p) {
 void generateIR(struct treeNode *root) {
     getIC(root);   
    	optimizationIR(icsHead);
-    printIR(icsHead);
+    //printIR(icsHead);
 }
